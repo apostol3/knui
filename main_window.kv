@@ -1,0 +1,202 @@
+FloatLayout:
+    BoxLayout:
+        orientation: 'horizontal'
+
+        StackLayout:
+            size_hint_x: None
+            width: '150dp'
+
+            Button:
+                text: 'Open'
+                size_hint: (0.5, None)
+                height: '30dp'
+                on_press: app.open_file_dialog()
+
+            Button:
+                text: 'Save'
+                size_hint: (0.5, None)
+                height: '30dp'
+                on_press: app.save_file_dialog()
+
+            Button:
+                text: 'Auto position'
+                size_hint_y: None
+                height: '30dp'
+                on_press: app.on_auto_pos()
+
+            Label:
+                text: 'IP:'
+                size_hint: (0.2, None)
+                height: 30
+
+            TextInput:
+                id: inp_ip
+                text: '127.0.0.1'
+                size_hint: (0.8, None)
+                height: 30
+                multiline: False
+
+            Label:
+                text: 'Host port:'
+                size_hint: (0.5, None)
+                height: 30
+
+            TextInput:
+                id: inp_host
+                text: '13550'
+                size_hint: (0.5, None)
+                height: 30
+                multiline: False
+
+            Button:
+                id: btn_connect
+                text: 'Connect'
+                size_hint_y: None
+                height: 30
+                on_press: app.on_btn_connect()
+
+            Label:
+                id: lbl_state
+                text: 'No data'
+                size_hint_y: None
+                height: 30
+
+            Button:
+                id: btn_start
+                text: 'Start'
+                size_hint: (0.5, None)
+                height: 40
+                on_press: app.server_command()
+
+            Button:
+                text: 'Stop'
+                size_hint: (0.5, None)
+                height: 40
+                on_press: app.server_stop()
+
+            Label:
+                text: 'Update speed: ' + app.update_text[int(update_slider.value)]
+                size_hint_y: None
+                height: 30
+
+            Slider:
+                id: update_slider
+                max: 3
+                value: 0
+                step: 1
+                size_hint_y: None
+                height: 30
+                on_touch_up: app.bind_get_pop()
+
+            Label:
+                text: 'Rounds:'
+                size_hint: (0.7, None)
+                height: 30
+
+            TextInput:
+                id: inp_rounds
+                text: '10'
+                size_hint: (0.3, None)
+                height: 30
+                multiline: False
+
+            Label:
+                text: 'Population:'
+                size_hint: (0.7, None)
+                height: 30
+
+            TextInput:
+                id: inp_pop
+                text: '10'
+                size_hint: (0.3, None)
+                height: 30
+                multiline: False
+
+
+            Button:
+                text: 'State'
+                size_hint: (0.5, None)
+                height: '30dp'
+                on_press: app.server_get_state()
+
+            Button:
+                text: '#Params'
+                size_hint: (0.5, None)
+                height: '30dp'
+
+            Button:
+                text: 'Pop'
+                size_hint: (0.5, None)
+                height: '30dp'
+                on_press: app.server_get_pop()
+
+            Button:
+                text: '#f@ck'
+                size_hint: (0.5, None)
+                height: '30dp'
+
+        NetDrawer:
+            id: drawbox
+            ContextMenu:
+                id: context_on_neuron
+                orig_parent: root
+                cancel_handler_widget: root
+
+                ContextMenuTextItem:
+                    text: 'Link with...'
+                    on_release: app.drawbox.on_link_with()
+
+                ContextMenuTextItem:
+                    text: 'Unlink with...'
+                    on_release: app.drawbox.on_unlink_with()
+
+                ContextMenuTextItem:
+                    text: 'Unlink all'
+                    on_release: app.drawbox.unlink_all()
+
+                ContextMenuTextItem:
+                    text: 'Type'
+
+                    ContextMenu:
+                        id: type_sub
+
+                        ContextMenuTextItem:
+                            text: app.neuron_names[2]
+                            on_release: app.drawbox.set_neuron_type(2)
+
+                        ContextMenuTextItem:
+                            text: app.neuron_names[3]
+                            on_release: app.drawbox.set_neuron_type(3)
+
+                        ContextMenuTextItem:
+                            text: app.neuron_names[4]
+                            on_release: app.drawbox.set_neuron_type(4)
+
+                        ContextMenuTextItem:
+                            text: app.neuron_names[5]
+                            on_release: app.drawbox.set_neuron_type(5)
+
+                        ContextMenuTextItem:
+                            text: app.neuron_names[6]
+                            on_release: app.drawbox.set_neuron_type(6)
+
+                        ContextMenuTextItem:
+                            text: app.neuron_names[7]
+                            on_release: app.drawbox.set_neuron_type(7)
+
+                ContextMenuTextItem:
+                    text: 'Delete neuron'
+                    on_release: app.drawbox.delete_neuron()
+
+            ContextMenu:
+                id: context_on_drawbox
+                orig_parent: root
+                cancel_handler_widget: root
+
+                ContextMenuTextItem:
+                    text: 'Add neuron'
+                    on_release: app.drawbox.add_neuron()
+        ListView:
+            size_hint_x: None
+            width: '150dp'
+            adapter: app.list_adapter
