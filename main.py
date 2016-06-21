@@ -1,9 +1,9 @@
 import json
 import os
 
-
 from kivy.adapters.listadapter import ListAdapter
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.text import Label as CoreLabel
 from kivy.garden.contextmenu import ContextMenu, ContextMenuTextItem
@@ -19,11 +19,9 @@ from kivy.uix.listview import ListItemButton
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
-from kivy.clock import Clock
 from tinyrpc.protocols.jsonrpc import JSONRPCProtocol
 
 from classes import *
-
 from udp_stream import UdpStream
 
 __author__ = "leon.ljsh"
@@ -122,7 +120,7 @@ class NetDrawer(Widget):
 
     def on_touch_down(self, touch):
         if not (self.pos[0] < touch.pos[0] < self.pos[0] + self.size[0] and
-                self.pos[1] < touch.pos[1] < self.pos[1] + self.size[1]):
+                            self.pos[1] < touch.pos[1] < self.pos[1] + self.size[1]):
             return
         self.faulted_click = False
         if touch.button == 'left':
@@ -281,7 +279,7 @@ class NetDrawer(Widget):
         self.draw()
 
     def add_neuron(self):
-        self.neuro_net.add_neuron(self.x0_pos - self.camx, self.y0_pos-self.camy)
+        self.neuro_net.add_neuron(self.x0_pos - self.camx, self.y0_pos - self.camy)
         app.root.ids.context_on_drawbox.hide()
         self.draw()
 
@@ -359,7 +357,7 @@ def open_file(path):
     doc = json.load(f)
     f.close()
     nets.append(load_net_from_dict(doc))
-    app.list_adapter.data = nets
+    app.update_list()
 
 
 def save_file(path, net):
@@ -403,7 +401,7 @@ class MainWindow(App):
         self.update_text = ['∞', 'low', 'mid', 'high']
 
         def list_item_args_converter(row_index, obj):
-            return {'text': '%d::%d' % (row_index, obj.fitness),
+            return {'text': '%d:%d' % (row_index, obj.fitness),
                     'size_hint_y': None,
                     'height': 25}
 
@@ -417,11 +415,17 @@ class MainWindow(App):
         open_file("to.nnt")
         return self.root
 
+    def update_list(self):
+        old_sel = self.list_adapter.selection
+        app.list_adapter.data = nets
+        if len(old_sel) and old_sel[0].index < len(nets):
+            self.list_adapter.select_item_view(self.list_adapter.get_view(old_sel[0].index))
+            self.update_select()
+
     def update_select(self, *_):
         if len(self.list_adapter.selection) == 0:
             self.drawbox.neuro_net = None
         else:
-            print(self.list_adapter.selection[0].index)
             self.drawbox.neuro_net = nets[self.list_adapter.selection[0].index]
 
         self.drawbox.neuron = None
@@ -432,7 +436,6 @@ class MainWindow(App):
         self.drawbox.draw()
 
     # TODO: Buttons and states
-    # TODO: List update (memorization selection)
     # TODO: Inspection
     # TODO: Read-only nets
 
@@ -449,7 +452,8 @@ class MainWindow(App):
         req = request.serialize()
         self.stream.send(bytes(req + "\0", encoding='utf8'))
         rep = self.rpc.parse_reply(self.stream.receive().decode().strip("\0 "))
-        print(rep.result if not hasattr(rep, "error") else "Error: " + rep.error)
+        if hasattr(rep, "error"):
+            print("Error: " + rep.error)
         return rep
 
     def server_command(self):
@@ -485,15 +489,16 @@ class MainWindow(App):
             print("Rounds: {}".format(app.root.ids.inp_rounds.text))
             self.is_started = True
             self.root.ids.btn_start.text = "Pause" if self.is_started else "Start"
-            self.send_request(self.rpc.create_request("start", kwargs={'rounds':int(app.root.ids.inp_rounds.text)}))
+            self.send_request(self.rpc.create_request("start", kwargs={'rounds': int(app.root.ids.inp_rounds.text)}))
 
     def bind_get_pop(self):
+        delay = [0, 3, 1, 0.3]
+        self.server_get_pop()
         if int(app.root.ids.update_slider.value) != 0:
             Clock.unschedule(self.server_get_pop)
-            Clock.schedule_interval(self.server_get_pop, int(app.root.ids.update_slider.value))
+            Clock.schedule_interval(self.server_get_pop, delay[int(app.root.ids.update_slider.value)])
         else:
             Clock.unschedule(self.server_get_pop)
-            self.server_get_pop
 
     def server_get_pop(self, *_):
         global nets, is_connect
@@ -504,7 +509,7 @@ class MainWindow(App):
                 print('shit')
             doc = rep.result
             nets = [load_net_from_dict(net) for net in doc["nets"]]
-            app.list_adapter.data = nets
+            self.update_list()
         else:
             pass
 
