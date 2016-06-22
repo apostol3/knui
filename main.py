@@ -11,6 +11,7 @@ from kivy.graphics import Color, Rectangle, Ellipse, Mesh
 from kivy.graphics import SmoothLine
 from kivy.graphics import Translate, ScissorPush, ScissorPop, Scale
 from kivy.lang import Builder
+from kivy.properties import Property
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.filechooser import FileChooserIconView
@@ -30,7 +31,13 @@ ContextMenu, ContextMenuTextItem
 Config.set('input', 'mouse', Config.get('input', 'mouse') + ',disable_multitouch')
 nets = []
 
-is_connect = False
+
+class ServerState(Enum):
+    disconnected = 0
+    stopped = 1
+    running = 2
+    paused = 3
+
 
 neuron_colors = [
     (0.82, 1, 0.76), (0.6, 0.8, 0.4), (1, 1, 1), (0.6, 0.176, 0.07), (1, 0.51, 0.67), (0.8, 0.435, 0.345),
@@ -161,6 +168,17 @@ class NetDrawer(Widget):
             Color(1, 0, 1, 0.5)
             Ellipse(pos=(self.x1_pos - 15 / 2, self.y1_pos - 15 / 2), size=(15, 15))
             Color(0, 0, 0)
+            if self.neuro_net:
+                label = CoreLabel(text='ID: {}\nName: {}\nNeurons: {}\nLinks: {}\nNote: {}'
+                                  .format(self.neuro_net.id, self.neuro_net.name, len(self.neuro_net.neurons),
+                                          len(self.neuro_net.links), self.neuro_net.note),
+                                  font_size=12, halign='left')
+                label.refresh()
+                text = label.texture
+                self.canvas.add(
+                    Rectangle(size=(text.size[0], -text.size[1]),
+                              pos=(0, self.size[1]),
+                              texture=text))
             if self.neuron:
                 label = CoreLabel(text='ID: {}\nType: {}\nActivation: {}\nEnergy: {}\nInputs: {}\nOutputs: {}'
                                   .format(self.neuron.id, neuron_names[self.neuron.type.value],
@@ -389,12 +407,12 @@ def save_file(path, net):
 
 
 class MainWindow(App):
+    state = Property(ServerState.disconnected)
+
     def __init__(self, **kwargs):
         super(MainWindow, self).__init__(**kwargs)
         self.stream = None
         self.rpc = None
-        self.is_paused = False
-        self.is_started = False
 
     def build(self):
         self.neuron_names = neuron_names
@@ -435,63 +453,75 @@ class MainWindow(App):
         self.drawbox.camy = 0
         self.drawbox.draw()
 
-    # TODO: Buttons and states
-    # TODO: Inspection
-    # TODO: Read-only nets
-
     def on_btn_connect(self, *_):
-        global is_connect
-        self.stream = UdpStream(app.root.ids.inp_ip.text, int(app.root.ids.inp_host.text), 1000)
-        self.stream.connect()
-        self.rpc = JSONRPCProtocol()
-        is_connect = not is_connect
-        self.root.ids.btn_connect.text = "Disconnect" if is_connect else "Connect"
-        self.server_get_state()
+        if self.state != ServerState.disconnected:
+            self.state = ServerState.disconnected
+            self.stream.disconnect()
+            self.stream = None
+            self.rpc = None
+        else:
+            self.stream = UdpStream(app.root.ids.inp_ip.text, int(app.root.ids.inp_host.text), 1000)
+            self.stream.connect()
+            self.rpc = JSONRPCProtocol()
+            self.state = ServerState.stopped
+            self.server_get_state()
 
     def send_request(self, request):
         req = request.serialize()
+        print("send request: {}, args: {}".format(request.method, request.args))
         self.stream.send(bytes(req + "\0", encoding='utf8'))
-        rep = self.rpc.parse_reply(self.stream.receive().decode().strip("\0 "))
+        raw_rep = self.stream.receive()
+        rep = self.rpc.parse_reply(raw_rep.decode().strip("\0 "))
         if hasattr(rep, "error"):
-            print("Error: " + rep.error)
+            print("get error: " + rep.error)
+        else:
+            print("get response: {0}".format(rep.result if len(raw_rep) < 255 else "<too long to print>"))
         return rep
 
     def server_command(self):
-        if (not self.is_paused) and self.is_started:
+        if self.state == ServerState.running:
             self.server_pause()
-        else:
+        elif self.state == ServerState.stopped:
             self.server_start()
+        elif self.state == ServerState.paused:
+            self.server_resume()
 
     def server_stop(self):
-        self.is_started = False
-        self.is_paused = False
-        if not (self.is_paused and self.is_started):
-            self.root.ids.btn_start.text = "Start"
-        self.send_request(self.rpc.create_request("stop"))
+        rep = self.send_request(self.rpc.create_request("stop"))
+        if hasattr(rep, "error"):
+            return
+
+        self.state = ServerState.stopped
 
     def server_pause(self):
-        self.is_paused = True
-        self.root.ids.btn_start.text = "Resume" if self.is_paused else "Pause"
-        self.send_request(self.rpc.create_request("pause"))
+        rep = self.send_request(self.rpc.create_request("pause"))
+        if hasattr(rep, "error"):
+            return
+
+        self.state = ServerState.paused
 
     def server_resume(self):
-        pass
-        # self.send_request(self.rpc.create_request("resume"))
+        rep = self.send_request(self.rpc.create_request("resume"))
+        if hasattr(rep, "error"):
+            return
+        self.state = ServerState.running
 
     def server_start(self):
-        if self.is_paused:
-            print('Resumed')
-            self.is_paused = False
-            self.root.ids.btn_start.text = "Resume" if self.is_paused else "Pause"
-            self.send_request(self.rpc.create_request("resume"))
-        else:
-            print("Popsize: {}".format(app.root.ids.inp_pop.text))
-            print("Rounds: {}".format(app.root.ids.inp_rounds.text))
-            self.is_started = True
-            self.root.ids.btn_start.text = "Pause" if self.is_started else "Start"
-            self.send_request(self.rpc.create_request("start", kwargs={'rounds': int(app.root.ids.inp_rounds.text)}))
+        if self.state == ServerState.paused:
+            rep = self.send_request(self.rpc.create_request("resume"))
+            if hasattr(rep, "error"):
+                return
+            self.state = ServerState.running
+        elif self.state == ServerState.stopped:
+            rep = self.send_request(
+                self.rpc.create_request("start", kwargs={'rounds': int(self.root.ids.inp_rounds.text),
+                                                         'popsize': int(self.root.ids.inp_pop.text)}))
+            if hasattr(rep, "error"):
+                return
+            self.state = ServerState.running
 
     def bind_get_pop(self):
+        print("on slider up")
         delay = [0, 3, 1, 0.3]
         self.server_get_pop()
         if int(app.root.ids.update_slider.value) != 0:
@@ -501,28 +531,38 @@ class MainWindow(App):
             Clock.unschedule(self.server_get_pop)
 
     def server_get_pop(self, *_):
-        global nets, is_connect
+        global nets
 
-        if is_connect and self.is_started:
-            rep = self.send_request(self.rpc.create_request("get_population"))
-            if hasattr(rep, 'error'):
-                print('shit')
-            doc = rep.result
-            nets = [load_net_from_dict(net) for net in doc["nets"]]
-            self.update_list()
-        else:
-            pass
+        if self.state == ServerState.disconnected:
+            return
+
+        rep = self.send_request(self.rpc.create_request("get_population"))
+        if hasattr(rep, 'error'):
+            return
+        doc = rep.result
+        nets = [load_net_from_dict(net) for net in doc["nets"]]
+        self.update_list()
 
     def server_get_state(self):
-        state = self.send_request(self.rpc.create_request("get_state"))
-        doc = state.result
+        if self.state == ServerState.disconnected:
+            return
+
+        rep = self.send_request(self.rpc.create_request("get_state"))
+
+        if hasattr(rep, 'error'):
+            return
+
+        doc = rep.result
         state_info = doc["state"]
-        self.root.ids.lbl_state.text = state_info
         if state_info == 'running':
-            self.is_started = True
-            self.root.ids.btn_start.text = "Pause"
-        else:
-            self.is_started = False
+            self.state = ServerState.running
+        elif state_info == 'paused':
+            self.state = ServerState.paused
+        elif state_info == 'stopped':
+            self.state = ServerState.stopped
+
+        self.root.ids.inp_rounds.text = str(doc['max_round'])
+        self.root.ids.inp_pop.text = str(doc['popsize'])
 
     def on_pass(self, *_):
         pass

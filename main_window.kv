@@ -26,11 +26,13 @@ FloatLayout:
 
             Label:
                 text: 'IP:'
+                disabled: app.state != app.state.disconnected
                 size_hint: (0.2, None)
                 height: 30
 
             TextInput:
                 id: inp_ip
+                disabled: app.state != app.state.disconnected
                 text: '127.0.0.1'
                 size_hint: (0.8, None)
                 height: 30
@@ -38,83 +40,92 @@ FloatLayout:
 
             Label:
                 text: 'Host port:'
+                disabled: app.state != app.state.disconnected
                 size_hint: (0.5, None)
                 height: 30
 
             TextInput:
                 id: inp_host
                 text: '13550'
+                disabled: app.state != app.state.disconnected
                 size_hint: (0.5, None)
                 height: 30
                 multiline: False
 
+            Label:
+                text: 'Stopped' if app.state == app.state.stopped else ('Running' if app.state == app.state.running else ('Paused' if app.state == app.state.paused else 'Disconnected'))
+                color: (1, 0.45, 0.35, 1) if app.state == app.state.stopped else ((0.3, 1, 0.35, 1) if app.state == app.state.running else ((1, 0.95, 0.3, 1) if app.state == app.state.paused else (1, 0, 0, 1)))
+                size_hint_y: None
+                height: 30
+
             Button:
-                id: btn_connect
-                text: 'Connect'
+                text: 'Connect' if app.state == app.state.disconnected else 'Disconnect'
                 size_hint_y: None
                 height: 30
                 on_press: app.on_btn_connect()
 
-            Label:
-                id: lbl_state
-                text: 'No data'
-                size_hint_y: None
-                height: 30
-
             Button:
-                id: btn_start
-                text: 'Start'
+                text: 'Pause' if app.state == app.state.running else ('Resume' if app.state == app.state.paused else 'Start')
+                disabled: app.state == app.state.disconnected
                 size_hint: (0.5, None)
                 height: 40
                 on_press: app.server_command()
 
             Button:
                 text: 'Stop'
+                disabled: app.state == app.state.disconnected
                 size_hint: (0.5, None)
                 height: 40
                 on_press: app.server_stop()
 
             Label:
                 text: 'Update speed: ' + app.update_text[int(update_slider.value)]
+                disabled: app.state == app.state.disconnected
                 size_hint_y: None
                 height: 30
 
             Slider:
                 id: update_slider
+                disabled: app.state == app.state.disconnected
                 max: 3
                 value: 0
                 step: 1
                 size_hint_y: None
                 height: 30
-                on_touch_up: app.bind_get_pop()
+                on_value: app.bind_get_pop()
 
             Label:
                 text: 'Rounds:'
-                size_hint: (0.7, None)
+                disabled: app.state != app.state.stopped
+                size_hint: (0.6, None)
                 height: 30
 
             TextInput:
                 id: inp_rounds
                 text: '10'
-                size_hint: (0.3, None)
+                disabled: app.state != app.state.stopped
+                size_hint: (0.4, None)
                 height: 30
                 multiline: False
 
             Label:
                 text: 'Population:'
-                size_hint: (0.7, None)
+                disabled: app.state != app.state.stopped
+                size_hint: (0.6, None)
                 height: 30
 
             TextInput:
                 id: inp_pop
                 text: '10'
-                size_hint: (0.3, None)
+                disabled: app.state != app.state.stopped
+                size_hint: (0.4, None)
                 height: 30
                 multiline: False
 
 
             Button:
                 text: 'State'
+                disabled: app.state == app.state.disconnected
                 size_hint: (0.5, None)
                 height: '30dp'
                 on_press: app.server_get_state()
@@ -126,6 +137,7 @@ FloatLayout:
 
             Button:
                 text: 'Pop'
+                disabled: app.state == app.state.disconnected
                 size_hint: (0.5, None)
                 height: '30dp'
                 on_press: app.server_get_pop()
