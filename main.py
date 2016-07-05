@@ -118,9 +118,9 @@ class NetDrawer(Widget):
         if self.neuro_net is None:
             return
         if self.neuron:
-            app.root.ids.context_on_neuron.show(*app.root_window.mouse_pos)
+            app.root.ids.context_on_neuron.show(*touch.pos)
         else:
-            app.root.ids.context_on_drawbox.show(*app.root_window.mouse_pos)
+            app.root.ids.context_on_drawbox.show(*touch.pos)
 
     def on_button_right_down(self, touch):
         self.on_button_left_down(touch)
