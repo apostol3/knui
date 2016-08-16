@@ -1,7 +1,12 @@
 FloatLayout:
     BoxLayout:
         orientation: 'horizontal'
-
+        canvas:
+            Color:
+                rgb: (0.02,0.02,0.02,1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
         StackLayout:
             size_hint_x: None
             width: '150dp'
@@ -122,6 +127,20 @@ FloatLayout:
                 height: 30
                 multiline: False
 
+            Label:
+                text: 'Save dir:'
+                disabled: app.state != app.state.stopped
+                size_hint: (0.6, None)
+                height: 30
+
+            TextInput:
+                id: inp_save_dir
+                text: '10'
+                disabled: app.state != app.state.stopped
+                size_hint: (0.4, None)
+                height: 30
+                multiline: False
+
 
             Button:
                 text: 'State'
@@ -147,67 +166,130 @@ FloatLayout:
                 size_hint: (0.5, None)
                 height: '30dp'
 
-        NetDrawer:
-            id: drawbox
-            ContextMenu:
-                id: context_on_neuron
-                orig_parent: root
-                cancel_handler_widget: root
 
-                ContextMenuTextItem:
-                    text: 'Link with...'
-                    on_release: app.drawbox.on_link_with()
+        BoxLayout:
+            orientation: 'vertical'
+            canvas:
+                Color:
+                    rgb: (0.04,0.04,0.045,1)
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            spacing: 3
 
-                ContextMenuTextItem:
-                    text: 'Unlink with...'
-                    on_release: app.drawbox.on_unlink_with()
+            NetDrawer:
+                id: drawbox
+                ContextMenu:
+                    id: context_on_neuron
+                    orig_parent: root
+                    cancel_handler_widget: root
 
-                ContextMenuTextItem:
-                    text: 'Unlink all'
-                    on_release: app.drawbox.unlink_all()
+                    ContextMenuTextItem:
+                        text: 'Link with...'
+                        on_release: app.drawbox.on_link_with()
 
-                ContextMenuTextItem:
-                    text: 'Type'
+                    ContextMenuTextItem:
+                        text: 'Unlink with...'
+                        on_release: app.drawbox.on_unlink_with()
 
-                    ContextMenu:
-                        id: type_sub
+                    ContextMenuTextItem:
+                        text: 'Unlink all'
+                        on_release: app.drawbox.unlink_all()
 
-                        ContextMenuTextItem:
-                            text: app.neuron_names[2]
-                            on_release: app.drawbox.set_neuron_type(2)
+                    ContextMenuTextItem:
+                        text: 'Type'
 
-                        ContextMenuTextItem:
-                            text: app.neuron_names[3]
-                            on_release: app.drawbox.set_neuron_type(3)
+                        ContextMenu:
+                            id: type_sub
 
-                        ContextMenuTextItem:
-                            text: app.neuron_names[4]
-                            on_release: app.drawbox.set_neuron_type(4)
+                            ContextMenuTextItem:
+                                text: app.neuron_names[2]
+                                on_release: app.drawbox.set_neuron_type(2)
 
-                        ContextMenuTextItem:
-                            text: app.neuron_names[5]
-                            on_release: app.drawbox.set_neuron_type(5)
+                            ContextMenuTextItem:
+                                text: app.neuron_names[3]
+                                on_release: app.drawbox.set_neuron_type(3)
 
-                        ContextMenuTextItem:
-                            text: app.neuron_names[6]
-                            on_release: app.drawbox.set_neuron_type(6)
+                            ContextMenuTextItem:
+                                text: app.neuron_names[4]
+                                on_release: app.drawbox.set_neuron_type(4)
 
-                        ContextMenuTextItem:
-                            text: app.neuron_names[7]
-                            on_release: app.drawbox.set_neuron_type(7)
+                            ContextMenuTextItem:
+                                text: app.neuron_names[5]
+                                on_release: app.drawbox.set_neuron_type(5)
 
-                ContextMenuTextItem:
-                    text: 'Delete neuron'
-                    on_release: app.drawbox.delete_neuron()
+                            ContextMenuTextItem:
+                                text: app.neuron_names[6]
+                                on_release: app.drawbox.set_neuron_type(6)
 
-            ContextMenu:
-                id: context_on_drawbox
-                orig_parent: root
-                cancel_handler_widget: root
+                            ContextMenuTextItem:
+                                text: app.neuron_names[7]
+                                on_release: app.drawbox.set_neuron_type(7)
 
-                ContextMenuTextItem:
-                    text: 'Add neuron'
-                    on_release: app.drawbox.add_neuron()
+                    ContextMenuTextItem:
+                        text: 'Delete neuron'
+                        on_release: app.drawbox.delete_neuron()
+
+                ContextMenu:
+                    id: context_on_drawbox
+                    orig_parent: root
+                    cancel_handler_widget: root
+
+                    ContextMenuTextItem:
+                        text: 'Add neuron'
+                        on_release: app.drawbox.add_neuron()
+
+            Label:
+                size_hint: (1,None)
+                height: '15dp'
+                text: "Speed: {} p/s    Round: {}/{} Best: {:.0f}".format(app.status_speed, app.status_round, app.status_max_round, app.status_best)
+                font_size: '12dp'
+                halign: 'left'
+                text_size: (self.width, None)
+                padding: (5,0)
+
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: (1,None)
+                height: '75dp'
+
+                Graph:
+                    id: graph_speed
+                    xmin: 0
+                    xmax: 100
+                    ymin: 0
+                    ymax: 50
+                    size_hint: (0.5, 1)
+                    x_ticks_major:25
+                    y_ticks_major: 25
+                    x_grid: True
+                    y_grid: True
+                    x_ticks_minor: 5
+                    y_ticks_minor: 5
+                    ylabel: 'Speed'
+                    x_grid_label: True
+                    y_grid_label: True
+                    font_size: '11dp'
+                    padding: 3
+
+                Graph:
+                    id: graph_fitness
+                    xmin: 0
+                    xmax: 100
+                    ymin: 0
+                    ymax: 50
+                    size_hint: (0.5, 1)
+                    x_ticks_major:25
+                    y_ticks_major: 25
+                    x_grid: True
+                    y_grid: True
+                    x_ticks_minor: 5
+                    y_ticks_minor: 5
+                    ylabel: 'Fitness'
+                    x_grid_label: True
+                    y_grid_label: True
+                    font_size: '11dp'
+                    padding: 3
         ListView:
             size_hint_x: None
             width: '150dp'

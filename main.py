@@ -7,6 +7,7 @@ from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.text import Label as CoreLabel
 from kivy.garden.contextmenu import ContextMenu, ContextMenuTextItem
+from kivy.garden.graph import SmoothLinePlot
 from kivy.graphics import Color, Rectangle, Ellipse, Mesh
 from kivy.graphics import SmoothLine
 from kivy.graphics import Translate, ScissorPush, ScissorPop, Scale
@@ -43,6 +44,13 @@ neuron_colors = [
     (0.82, 1, 0.76), (0.6, 0.8, 0.4), (1, 1, 1), (0.6, 0.176, 0.07), (1, 0.51, 0.67), (0.8, 0.435, 0.345),
     (0.345, 0.8, 0.775), (0.33, 0.67, 1)]
 
+drawer_colors = {
+    "bg": (1, 1, 1, 1),
+    "arrows": (0, 0, 0, 0.8),
+    "text": (0, 0, 0, 1),
+    "stroke": (0, 0, 0, 1)
+}
+
 neuron_labels = ["I", "O", " ", "A", "L", "B", "N", "G"]
 neuron_names = ["input", "output", "blank", "activation", "limit", "binary", "inverter", "generator"]
 
@@ -73,13 +81,13 @@ class NetDrawer(Widget):
 
     def on_button_left_down(self, touch):
         self.x0_pos = touch.pos[0] - self.pos[0]
-        self.y0_pos = -touch.pos[1] - self.pos[1] + self.size[1]
+        self.y0_pos = -touch.pos[1] + self.pos[1] + self.size[1]
         self.neuron = self.select_neuron(self.x0_pos - self.camx, self.y0_pos - self.camy)
         self.draw()
 
     def on_button_left_move(self, touch):
         self.x1_pos = touch.pos[0] - self.pos[0]
-        self.y1_pos = -touch.pos[1] - self.pos[1] + self.size[1]
+        self.y1_pos = -touch.pos[1] + self.pos[1] + self.size[1]
         if self.neuron:
             n_v = self.neuro_net.get_neuron_vis(self.neuron.id)
             n_v.x += self.x1_pos - self.x0_pos
@@ -93,7 +101,7 @@ class NetDrawer(Widget):
 
     def on_button_left_up(self, touch):
         self.x1_pos = touch.pos[0] - self.pos[0]
-        self.y1_pos = -touch.pos[1] - self.pos[1] + self.size[1]
+        self.y1_pos = -touch.pos[1] + self.pos[1] + self.size[1]
         if self.neuron:
             n_v = self.neuro_net.get_neuron_vis(self.neuron.id)
             n_v.x += self.x1_pos - self.x0_pos
@@ -156,7 +164,7 @@ class NetDrawer(Widget):
 
         with self.canvas:
             ScissorPush(x=self.pos[0], y=self.pos[1], width=self.size[0], height=self.size[1])
-            Color(1, 1, 1)
+            Color(*drawer_colors['bg'])
             Translate(self.pos[0], self.pos[1] + self.size[1])
             Scale(1, -1, 1)
             Rectangle(pos=(0, 0), size=self.size)
@@ -167,7 +175,7 @@ class NetDrawer(Widget):
             Ellipse(pos=(self.x0_pos - 5, self.y0_pos - 5), size=(10, 10))
             Color(1, 0, 1, 0.5)
             Ellipse(pos=(self.x1_pos - 15 / 2, self.y1_pos - 15 / 2), size=(15, 15))
-            Color(0, 0, 0)
+            Color(*drawer_colors['text'])
             if self.neuro_net:
                 label = CoreLabel(text='ID: {}\nName: {}\nNeurons: {}\nLinks: {}\nNote: {}'
                                   .format(self.neuro_net.id, self.neuro_net.name, len(self.neuro_net.neurons),
@@ -191,6 +199,7 @@ class NetDrawer(Widget):
                     Rectangle(size=(text.size[0], -text.size[1]),
                               pos=(self.size[0] - text.size[0], self.size[1]),
                               texture=text))
+            Color(0, 0, 0)
             Scale(1, -1, 1)
             Translate(-self.pos[0], -self.pos[1] - self.size[1])
 
@@ -201,7 +210,7 @@ class NetDrawer(Widget):
         if self.neuro_net is None:
             return
 
-        Color(0, 0, 0, 0.8)
+        Color(*drawer_colors['arrows'])
         for link in self.neuro_net.links:
             n_in = self.neuro_net.get_neuron_vis(link.input)
             n_out = self.neuro_net.get_neuron_vis(link.output)
@@ -248,7 +257,7 @@ class NetDrawer(Widget):
             Color(*neuron_colors[neuron.type.value])
             Ellipse(pos=(n_v.x - n_v.r, n_v.y - n_v.r), size=(n_v.r * 2, n_v.r * 2))
 
-            Color(0, 0, 0)
+            Color(*drawer_colors['stroke'])
             SmoothLine(ellipse=(n_v.x - n_v.r, n_v.y - n_v.r, n_v.r * 2, n_v.r * 2),
                        width=1.05)
 
@@ -260,7 +269,7 @@ class NetDrawer(Widget):
                 Color(0.7, 0, 0.8)
                 SmoothLine(ellipse=(n_v.x - n_v.r, n_v.y - n_v.r, n_v.r * 2, n_v.r * 2), width=2)
 
-            Color(0, 0, 0)
+            Color(*drawer_colors['text'])
             label = CoreLabel(text='{0}\n{1:.3}'.format(neuron_labels[neuron.type.value], float(neuron.e_active)),
                               font_size=12, halign='center')
             label.refresh()
@@ -408,11 +417,17 @@ def save_file(path, net):
 
 class MainWindow(App):
     state = Property(ServerState.disconnected)
+    status_speed = Property(0)
+    status_best = Property(0)
+    status_round = Property(0)
+    status_max_round = Property(1)
 
     def __init__(self, **kwargs):
         super(MainWindow, self).__init__(**kwargs)
         self.stream = None
         self.rpc = None
+        self.speed_plot = None
+        self.fitness_plot = None
 
     def build(self):
         self.neuron_names = neuron_names
@@ -456,15 +471,90 @@ class MainWindow(App):
     def on_btn_connect(self, *_):
         if self.state != ServerState.disconnected:
             self.state = ServerState.disconnected
+            Clock.unschedule(self.auto_get_state)
             self.stream.disconnect()
             self.stream = None
             self.rpc = None
+
         else:
+            self.initialize_plots()
+
             self.stream = UdpStream(app.root.ids.inp_ip.text, int(app.root.ids.inp_host.text), 1000)
             self.stream.connect()
             self.rpc = JSONRPCProtocol()
             self.state = ServerState.stopped
             self.server_get_state()
+            Clock.schedule_interval(self.auto_get_state, 1)
+
+    def initialize_plots(self):
+        # speed plot
+        self.root.ids.graph_speed.remove_plot(self.speed_plot)
+        self.speed_plot = SmoothLinePlot(color=[0.5, 0.55, 0.9, 1])
+        self.speed_plot.points = []
+        app.root.ids.graph_speed.add_plot(self.speed_plot)
+
+        # fitness plot
+
+        self.root.ids.graph_fitness.remove_plot(self.fitness_plot)
+        self.fitness_plot = SmoothLinePlot(color=[0.4, 0.95, 0.7, 1])
+        self.fitness_plot.points = []
+        app.root.ids.graph_fitness.add_plot(self.fitness_plot)
+
+    def add_speed_point(self, point):
+        graph = self.root.ids.graph_speed
+        plot = self.speed_plot
+
+        x_plot_len = graph.xmax - graph.xmin
+        y_ticks_fold = 20
+
+        if len(plot.points) > x_plot_len:
+            plot.points.pop(0)
+
+        data_len = plot.points[-1][0] + 1 if len(plot.points) else 0
+
+        plot.points.append((data_len, point))
+        graph.xmin = max(data_len - x_plot_len, 0)
+        graph.xmax = max(data_len, x_plot_len)
+        points_min = min(i[1] for i in plot.points)
+        points_max = max(i[1] for i in plot.points)
+        graph.ymax = (points_max * 1.1 // y_ticks_fold + 1) * y_ticks_fold
+        graph.ymin = (points_min * 0.9 // y_ticks_fold) * y_ticks_fold
+        if graph.ymax - graph.ymin < y_ticks_fold:
+            graph.ymax = graph.ymin + y_ticks_fold
+        graph.y_ticks_major = (graph.ymax - graph.ymin) / 2
+
+    def add_fitness_point(self, round, point):
+        graph = self.root.ids.graph_fitness
+        plot = self.fitness_plot
+
+        if len(plot.points) and round == plot.points[-1][0]:
+            return
+        elif len(plot.points) and round < plot.points[-1][0]:
+            plot.points = []
+
+        x_plot_len = graph.xmax - graph.xmin
+        y_ticks_fold = 20
+
+        if len(plot.points) > x_plot_len:
+            plot.points.pop(0)
+
+        plot_len = plot.points[-1][0] + 1 if len(plot.points) else 0
+
+        plot.points.append((round, point))
+        graph.xmin = max(round - x_plot_len, 0)
+        graph.xmax = max(round, x_plot_len)
+        points_min = min(i[1] for i in plot.points)
+        points_max = max(i[1] for i in plot.points)
+        graph.ymax = (points_max * 1.1 // y_ticks_fold + 1) * y_ticks_fold
+        graph.ymin = (points_min * 0.9 // y_ticks_fold) * y_ticks_fold
+        if graph.ymax - graph.ymin < y_ticks_fold:
+            graph.ymax = graph.ymin + y_ticks_fold
+        graph.y_ticks_major = (graph.ymax - graph.ymin) / 2
+
+    def auto_get_state(self, *_):
+        if self.state == ServerState.stopped:
+            return
+        self.server_get_state()
 
     def send_request(self, request):
         req = request.serialize()
@@ -513,15 +603,19 @@ class MainWindow(App):
                 return
             self.state = ServerState.running
         elif self.state == ServerState.stopped:
+            req_body = {'rounds': int(self.root.ids.inp_rounds.text),
+                        'popsize': int(self.root.ids.inp_pop.text),
+                        }
+            if len(self.root.ids.inp_save_dir.text) != 0:
+                req_body['save_dir'] = self.root.ids.inp_save_dir.text
+
             rep = self.send_request(
-                self.rpc.create_request("start", kwargs={'rounds': int(self.root.ids.inp_rounds.text),
-                                                         'popsize': int(self.root.ids.inp_pop.text)}))
+                self.rpc.create_request("start", kwargs=req_body))
             if hasattr(rep, "error"):
                 return
             self.state = ServerState.running
 
     def bind_get_pop(self):
-        print("on slider up")
         delay = [0, 3, 1, 0.3]
         self.server_get_pop()
         if int(app.root.ids.update_slider.value) != 0:
@@ -563,6 +657,16 @@ class MainWindow(App):
 
         self.root.ids.inp_rounds.text = str(doc['max_round'])
         self.root.ids.inp_pop.text = str(doc['popsize'])
+        self.root.ids.inp_save_dir.text = str(doc['save_dir'])
+
+        if self.state == ServerState.running:
+            self.add_speed_point(doc['speed'])
+            self.add_fitness_point(doc['round'], doc['best'])
+
+        self.status_best = doc['best']
+        self.status_max_round = doc['max_round']
+        self.status_round = doc['round']
+        self.status_speed = doc['speed']
 
     def on_pass(self, *_):
         pass
