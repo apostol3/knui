@@ -171,10 +171,10 @@ class NetDrawer(Widget):
             Translate(self.camx, self.camy)
             self.inner_draw()
             Translate(-self.camx, -self.camy)
-            Color(1, 0, 0, 0.5)
-            Ellipse(pos=(self.x0_pos - 5, self.y0_pos - 5), size=(10, 10))
-            Color(1, 0, 1, 0.5)
-            Ellipse(pos=(self.x1_pos - 15 / 2, self.y1_pos - 15 / 2), size=(15, 15))
+            # Color(1, 0, 0, 0.5)
+            # Ellipse(pos=(self.x0_pos - 5, self.y0_pos - 5), size=(10, 10))
+            # Color(1, 0, 1, 0.5)
+            # Ellipse(pos=(self.x1_pos - 15 / 2, self.y1_pos - 15 / 2), size=(15, 15))
             Color(*drawer_colors['text'])
             if self.neuro_net:
                 label = CoreLabel(text='ID: {}\nName: {}\nNeurons: {}\nLinks: {}\nNote: {}'
@@ -445,7 +445,7 @@ class MainWindow(App):
         self.root = Builder.load_file('main_window.kv')
         self.drawbox = self.root.ids.drawbox
 
-        open_file("to.nnt")
+        #open_file("to.nnt")
         return self.root
 
     def update_list(self):
@@ -538,7 +538,6 @@ class MainWindow(App):
         if len(plot.points) > x_plot_len:
             plot.points.pop(0)
 
-        plot_len = plot.points[-1][0] + 1 if len(plot.points) else 0
 
         plot.points.append((round, point))
         graph.xmin = max(round - x_plot_len, 0)
@@ -807,5 +806,5 @@ class MainWindow(App):
         p.open()
 
 
-app = MainWindow()
+app = MainWindow(title='kNUI - kivy-based nlab UI')
 app.run()

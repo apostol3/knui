@@ -10,6 +10,8 @@ FloatLayout:
         StackLayout:
             size_hint_x: None
             width: '150dp'
+            padding: 2
+            spacing: 2
 
             Button:
                 text: 'Open'
@@ -23,23 +25,17 @@ FloatLayout:
                 height: '30dp'
                 on_press: app.save_file_dialog()
 
-            Button:
-                text: 'Auto position'
-                size_hint_y: None
-                height: '30dp'
-                on_press: app.on_auto_pos()
-
             Label:
                 text: 'IP:'
                 disabled: app.state != app.state.disconnected
-                size_hint: (0.2, None)
+                size_hint: (0.18, None)
                 height: 30
 
             TextInput:
                 id: inp_ip
                 disabled: app.state != app.state.disconnected
                 text: '127.0.0.1'
-                size_hint: (0.8, None)
+                size_hint: (0.82, None)
                 height: 30
                 multiline: False
 
@@ -130,41 +126,31 @@ FloatLayout:
             Label:
                 text: 'Save dir:'
                 disabled: app.state != app.state.stopped
-                size_hint: (0.6, None)
+                size_hint: (1, None)
+                text_size: (self.size[0]-15, self.size[1])
                 height: 30
 
             TextInput:
                 id: inp_save_dir
-                text: '10'
+                text: ''
                 disabled: app.state != app.state.stopped
-                size_hint: (0.4, None)
+                size_hint: (1, None)
                 height: 30
                 multiline: False
 
-
             Button:
-                text: 'State'
+                text: 'Get population'
                 disabled: app.state == app.state.disconnected
-                size_hint: (0.5, None)
-                height: '30dp'
-                on_press: app.server_get_state()
-
-            Button:
-                text: '#Params'
-                size_hint: (0.5, None)
-                height: '30dp'
-
-            Button:
-                text: 'Pop'
-                disabled: app.state == app.state.disconnected
-                size_hint: (0.5, None)
-                height: '30dp'
+                size_hint: (1, None)
+                height: '32dp'
                 on_press: app.server_get_pop()
 
             Button:
-                text: '#f@ck'
-                size_hint: (0.5, None)
-                height: '30dp'
+                text: 'Auto position'
+                size_hint_y: None
+                height: '32dp'
+                on_press: app.on_auto_pos()
+
 
 
         BoxLayout:
@@ -239,14 +225,27 @@ FloatLayout:
                         text: 'Add neuron'
                         on_release: app.drawbox.add_neuron()
 
-            Label:
-                size_hint: (1,None)
+            BoxLayout:
+                orientation: 'horizontal'
                 height: '15dp'
-                text: "Speed: {} p/s    Round: {}/{} Best: {:.0f}".format(app.status_speed, app.status_round, app.status_max_round, app.status_best)
-                font_size: '12dp'
-                halign: 'left'
-                text_size: (self.width, None)
-                padding: (5,0)
+                size_hint_y: None
+
+
+                Label:
+                    text: "Speed: {} p/s    Round: {}/{} Best: {:.0f}".format(app.status_speed, app.status_round, app.status_max_round, app.status_best)
+                    font_size: '12dp'
+                    halign: 'left'
+                    text_size: (self.width, None)
+                    padding: (5,5)
+
+
+                Button:
+                    text: 'Update'
+                    disabled: app.state == app.state.disconnected
+                    size_hint: (None, 1)
+                    width: '55dp'
+                    font_size: '12dp'
+                    on_press: app.server_get_state()
 
             BoxLayout:
                 orientation: 'horizontal'
@@ -290,7 +289,16 @@ FloatLayout:
                     y_grid_label: True
                     font_size: '11dp'
                     padding: 3
-        ListView:
+
+        BoxLayout:
+            orientation: 'vertical'
             size_hint_x: None
-            width: '150dp'
-            adapter: app.list_adapter
+            width: '100dp'
+            Label:
+                text: "Net list"
+                size_hint_y: None
+                height: '35dp'
+
+            ListView:
+
+                adapter: app.list_adapter
