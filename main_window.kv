@@ -13,18 +13,6 @@ FloatLayout:
             padding: 2
             spacing: 2
 
-            Button:
-                text: 'Open'
-                size_hint: (0.5, None)
-                height: '30dp'
-                on_press: app.open_file_dialog()
-
-            Button:
-                text: 'Save'
-                size_hint: (0.5, None)
-                height: '30dp'
-                on_press: app.save_file_dialog()
-
             Label:
                 text: 'IP:'
                 disabled: app.state != app.state.disconnected
@@ -310,3 +298,18 @@ FloatLayout:
             ListView:
 
                 adapter: app.list_adapter
+
+            StackLayout:
+                size_hint: (1, None)
+                height: '30dp'
+                spacing: 1
+                padding: 2
+                Button:
+                    text: 'Open'
+                    size_hint: (0.5, 1)
+                    on_press: app.open_file_dialog()
+
+                Button:
+                    text: 'Save'
+                    size_hint: (0.5, 1)
+                    on_press: app.save_file_dialog()
