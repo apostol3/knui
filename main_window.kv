@@ -54,8 +54,8 @@ FloatLayout:
                 multiline: False
 
             Label:
-                text: 'Stopped' if app.state == app.state.stopped else ('Running' if app.state == app.state.running else ('Paused' if app.state == app.state.paused else 'Disconnected'))
-                color: (1, 0.45, 0.35, 1) if app.state == app.state.stopped else ((0.3, 1, 0.35, 1) if app.state == app.state.running else ((1, 0.95, 0.3, 1) if app.state == app.state.paused else (1, 0, 0, 1)))
+                text: 'Stopped' if app.state == app.state.stopped else ('Running' if app.state == app.state.running else ('Paused' if app.state == app.state.paused else ('Inspection' if app.state == app.state.inspection else 'Disconnected')))
+                color: (1, 0.45, 0.35, 1) if app.state == app.state.stopped else ((0.3, 1, 0.35, 1) if app.state == app.state.running else ((1, 0.95, 0.3, 1) if app.state == app.state.paused else ((0.6,0.85,1,1) if app.state == app.state.inspection else (1, 0, 0, 1))))
                 size_hint_y: None
                 height: 30
 
@@ -67,17 +67,25 @@ FloatLayout:
 
             Button:
                 text: 'Pause' if app.state == app.state.running else ('Resume' if app.state == app.state.paused else 'Start')
-                disabled: app.state == app.state.disconnected
+                disabled: app.state in (app.state.disconnected, app.state.inspection)
                 size_hint: (0.5, None)
                 height: 40
                 on_press: app.server_command()
 
             Button:
                 text: 'Stop'
-                disabled: app.state == app.state.disconnected
+                disabled: app.state in (app.state.disconnected, app.state.inspection)
                 size_hint: (0.5, None)
                 height: 40
                 on_press: app.server_stop()
+
+            ToggleButton:
+                text: 'Inspection'
+                id: btn_inspection
+                disabled: app.state not in (app.state.paused, app.state.inspection)
+                size_hint_y: None
+                height: '32dp'
+                on_state: app.on_btn_inspection(args[1])
 
             Label:
                 text: 'Update speed: ' + app.update_text[int(update_slider.value)]

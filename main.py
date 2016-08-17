@@ -38,6 +38,7 @@ class ServerState(Enum):
     stopped = 1
     running = 2
     paused = 3
+    inspection = 4
 
 
 neuron_colors = [
@@ -445,7 +446,7 @@ class MainWindow(App):
         self.root = Builder.load_file('main_window.kv')
         self.drawbox = self.root.ids.drawbox
 
-        #open_file("to.nnt")
+        # open_file("to.nnt")
         return self.root
 
     def update_list(self):
@@ -470,8 +471,12 @@ class MainWindow(App):
 
     def on_btn_connect(self, *_):
         if self.state != ServerState.disconnected:
-            self.state = ServerState.disconnected
+            if self.state == ServerState.inspection:
+                Clock.unschedule(self.bind_inspection)
+                self.root.ids.btn_inspection.state = 'normal'
             Clock.unschedule(self.auto_get_state)
+
+            self.state = ServerState.disconnected
             self.stream.disconnect()
             self.stream = None
             self.rpc = None
@@ -538,7 +543,6 @@ class MainWindow(App):
         if len(plot.points) > x_plot_len:
             plot.points.pop(0)
 
-
         plot.points.append((round, point))
         graph.xmin = max(round - x_plot_len, 0)
         graph.xmax = max(round, x_plot_len)
@@ -557,7 +561,7 @@ class MainWindow(App):
 
     def send_request(self, request):
         req = request.serialize()
-        print("send request: {}, args: {}".format(request.method, request.args))
+        print("send request: {}, args: {}".format(request.method, request.kwargs))
         self.stream.send(bytes(req + "\0", encoding='utf8'))
         raw_rep = self.stream.receive()
         rep = self.rpc.parse_reply(raw_rep.decode().strip("\0 "))
@@ -646,19 +650,20 @@ class MainWindow(App):
             return
 
         doc = rep.result
-        state_info = doc["state"]
-        if state_info == 'running':
-            self.state = ServerState.running
-        elif state_info == 'paused':
-            self.state = ServerState.paused
-        elif state_info == 'stopped':
-            self.state = ServerState.stopped
+        if self.state != ServerState.inspection:
+            state_info = doc["state"]
+            if state_info == 'running':
+                self.state = ServerState.running
+            elif state_info == 'paused':
+                self.state = ServerState.paused
+            elif state_info == 'stopped':
+                self.state = ServerState.stopped
 
         self.root.ids.inp_rounds.text = str(doc['max_round'])
         self.root.ids.inp_pop.text = str(doc['popsize'])
         self.root.ids.inp_save_dir.text = str(doc['save_dir'])
 
-        if self.state == ServerState.running:
+        if self.state == ServerState.running or self.state == ServerState.inspection:
             self.add_speed_point(doc['speed'])
             self.add_fitness_point(doc['round'], doc['best'])
 
@@ -666,6 +671,17 @@ class MainWindow(App):
         self.status_max_round = doc['max_round']
         self.status_round = doc['round']
         self.status_speed = doc['speed']
+
+    def on_btn_inspection(self, value):
+        if value == 'down':
+            self.state = ServerState.inspection
+            Clock.schedule_interval(self.bind_inspection, 1 / 15)
+        else:
+            self.state = ServerState.paused
+            Clock.unschedule(self.bind_inspection)
+
+    def bind_inspection(self, dt):
+        rep = self.send_request(self.rpc.create_request("resume", kwargs={'ticks': int(dt * 60)}))
 
     def on_pass(self, *_):
         pass
