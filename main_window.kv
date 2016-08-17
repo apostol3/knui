@@ -13,6 +13,9 @@ FloatLayout:
             padding: 2
             spacing: 2
 
+            NamedSeparator:
+                text: 'Connection'
+
             Label:
                 text: 'IP:'
                 disabled: app.state != app.state.disconnected
@@ -41,17 +44,22 @@ FloatLayout:
                 height: 30
                 multiline: False
 
+            Button:
+                text: 'Connect' if app.state == app.state.disconnected else 'Disconnect'
+                size_hint_y: None
+                height: 30
+                on_press: app.on_btn_connect()
+
+            NamedSeparator:
+                text: 'Controls'
+
             Label:
                 text: 'Stopped' if app.state == app.state.stopped else ('Running' if app.state == app.state.running else ('Paused' if app.state == app.state.paused else ('Inspection' if app.state == app.state.inspection else 'Disconnected')))
                 color: (1, 0.45, 0.35, 1) if app.state == app.state.stopped else ((0.3, 1, 0.35, 1) if app.state == app.state.running else ((1, 0.95, 0.3, 1) if app.state == app.state.paused else ((0.6,0.85,1,1) if app.state == app.state.inspection else (1, 0, 0, 1))))
                 size_hint_y: None
                 height: 30
 
-            Button:
-                text: 'Connect' if app.state == app.state.disconnected else 'Disconnect'
-                size_hint_y: None
-                height: 30
-                on_press: app.on_btn_connect()
+
 
             Button:
                 text: 'Pause' if app.state == app.state.running else ('Resume' if app.state == app.state.paused else 'Start')
@@ -75,6 +83,8 @@ FloatLayout:
                 height: '32dp'
                 on_state: app.on_btn_inspection(args[1])
 
+            Separator:
+
             Label:
                 text: 'Update speed: ' + app.update_text[int(update_slider.value)]
                 disabled: app.state == app.state.disconnected
@@ -90,6 +100,9 @@ FloatLayout:
                 size_hint_y: None
                 height: 30
                 on_value: app.bind_get_pop()
+
+            NamedSeparator:
+                text: "Start parameters"
 
             Label:
                 text: 'Rounds:'
@@ -133,6 +146,8 @@ FloatLayout:
                 size_hint: (1, None)
                 height: 30
                 multiline: False
+
+            Separator:
 
             Button:
                 text: 'Get population'
@@ -290,10 +305,10 @@ FloatLayout:
             orientation: 'vertical'
             size_hint_x: None
             width: '100dp'
-            Label:
+            spacing: 2
+            padding:2
+            NamedSeparator:
                 text: "Net list"
-                size_hint_y: None
-                height: '35dp'
 
             ListView:
 
@@ -313,3 +328,30 @@ FloatLayout:
                     text: 'Save'
                     size_hint: (0.5, 1)
                     on_press: app.save_file_dialog()
+
+<Separator@Widget>:
+    canvas:
+        Color:
+            rgb: (0.3,0.32,0.34,1)
+        Rectangle:
+            pos: (self.pos[0], self.pos[1]+self.size[1]/2)
+            size: (self.size[0], self.sep_width)
+
+    size_hint_y: None
+    height: '10dp'
+    sep_width: 1
+
+<NamedSeparator@Label>:
+    canvas:
+        Color:
+            rgb: (0.3,0.32,0.34,1)
+        Rectangle:
+            pos: (self.pos[0], self.pos[1])
+            size: (self.size[0], self.sep_width)
+    text_size: self.size[0]-6, self.size[1]-2
+    font_size: '13dp'
+    valign: 'bottom'
+    size_hint_y: None
+    height: '20dp'
+    color: (0.7,0.7,0.7,1)
+    sep_width: 1

@@ -435,7 +435,7 @@ class MainWindow(App):
         self.update_text = ['∞', 'low', 'mid', 'high']
 
         def list_item_args_converter(row_index, obj):
-            return {'text': '%d:%d' % (row_index, obj.fitness),
+            return {'text': '%d:%d' % (row_index+1, obj.fitness),
                     'size_hint_y': None,
                     'height': 25}
 
