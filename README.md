@@ -14,23 +14,25 @@ Works on Windows, Linux, OS X, basically anywhere where you can install
 ## Requirements
 
 * python 3.x (tested on 3.5)
-* [kivy](https://kivy.org/#download) (>=1.9.1)
+* [kivy](https://kivy.org/#download) (>=1.9)
 * [tinyrpc](https://github.com/mbr/tinyrpc) (>=0.6.dev0)
 
 ## Installation
 
-Install all requirements, [download](https://github.com/leonljsh/knui/archive/master.zip)
-this repository, unpack it. Then open terminal, move to unpacked directory and call `setup.py`:
+You can install kNUI using pip:
 ```bash
-> python setup.py install
+> pip install https://github.com/apostol3/knui/archive/master.zip
 ```
 This command will install kNUI launch script.
-Then you easily can launch kNUI in console:
+Then you can launch kNUI in console:
 ```bash
-> knui
+> kNUI
 ```
 
-If you don't want to install package in your system you can just launch it:
+If you don't want install package in your system or you want to make some changes
+you can [download](https://github.com/apostol3/knui/archive/master.zip)
+this repository and unpack it. Then open terminal, move to unpacked directory and
+just launch it:
 ```bash
 > python -m kNUI.main
 ```
