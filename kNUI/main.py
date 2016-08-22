@@ -1,13 +1,12 @@
 import json
 import os
+import sys
 
 from kivy.adapters.listadapter import ListAdapter
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.text import Label as CoreLabel
-from kivy.garden.contextmenu import ContextMenu, ContextMenuTextItem
-from kivy.garden.graph import SmoothLinePlot
 from kivy.graphics import Color, Rectangle, Ellipse, Mesh
 from kivy.graphics import SmoothLine
 from kivy.graphics import Translate, ScissorPush, ScissorPop, Scale
@@ -23,12 +22,22 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from tinyrpc.protocols.jsonrpc import JSONRPCProtocol
 
-from classes import *
-from udp_stream import UdpStream
+from .classes import *
+from .udp_stream import UdpStream
 
 __author__ = "leon.ljsh"
 
+# Replacing argv[0] with this source file path
+# Because kivy.garden importer uses argv[0]/libs/garden to find garden modules
+_path = os.path.dirname(os.path.realpath(__file__))
+old_work_dir = sys.argv[0]
+sys.argv[0] = __file__
+from kivy.garden.contextmenu import ContextMenu, ContextMenuTextItem
+from kivy.garden.graph import SmoothLinePlot
+
 ContextMenu, ContextMenuTextItem
+sys.argv[0] = old_work_dir
+
 Config.set('input', 'mouse', Config.get('input', 'mouse') + ',disable_multitouch')
 nets = []
 
@@ -435,7 +444,7 @@ class MainWindow(App):
         self.update_text = ['∞', 'low', 'mid', 'high']
 
         def list_item_args_converter(row_index, obj):
-            return {'text': '%d:%d' % (row_index+1, obj.fitness),
+            return {'text': '%d:%d' % (row_index + 1, obj.fitness),
                     'size_hint_y': None,
                     'height': 25}
 
@@ -443,7 +452,7 @@ class MainWindow(App):
                                         cls=ListItemButton, selection_mode='single')
 
         self.list_adapter.bind(on_selection_change=self.update_select)
-        self.root = Builder.load_file('main_window.kv')
+        self.root = Builder.load_file(os.path.join(_path, 'main_window.kv'))
         self.drawbox = self.root.ids.drawbox
 
         # open_file("to.nnt")
@@ -822,5 +831,11 @@ class MainWindow(App):
         p.open()
 
 
-app = MainWindow(title='kNUI - kivy-based nlab UI')
-app.run()
+def run():
+    global app
+    app = MainWindow(title='kNUI - kivy-based nlab UI')
+    return app.run()
+
+
+if __name__ == "__main__":
+    run()

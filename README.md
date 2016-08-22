@@ -15,13 +15,24 @@ Works on Windows, Linux, OS X, basically anywhere where you can install
 
 * python 3.x (tested on 3.5)
 * [kivy](https://kivy.org/#download) (>=1.9.1)
-* [tinyrpc](https://github.com/mbr/tinyrpc) (>=0.6) (0.6.dev0 is ok)
+* [tinyrpc](https://github.com/mbr/tinyrpc) (>=0.6.dev0)
 
 ## Installation
 
-Install all requirements, download this repository, unpack it and simply launch  `main.py` file:
+Install all requirements, [download](https://github.com/leonljsh/knui/archive/master.zip)
+this repository, unpack it. Then open terminal, move to unpacked directory and call `setup.py`:
 ```bash
-python kNUI/main.py
+> python setup.py install
+```
+This command will install kNUI launch script.
+Then you easily can launch kNUI in console:
+```bash
+> knui
+```
+
+If you don't want to install package in your system you can just launch it:
+```bash
+> python -m kNUI.main
 ```
 
 ## Usage
@@ -48,6 +59,12 @@ python kNUI/main.py
 ## Screenshot
 
 ![screenshot](./screenshot.png)
+
+## Uninstalling
+Open terminal and use pip to uninstall module:
+```bash
+> pip uninstall kNUI
+```
 
 ## Authors
 
