@@ -1,9 +1,55 @@
-##kNUI - kivy-based nlab user interface
+# kNUI - kivy-based nlab user interface
 
-Require:
-* [kivy](http://kivy.org/)
-* [pynlab](https://github.com/apostol3/pynlab)
+kNUI is a GUI for nlab, written in python and based on kivy framework.
 
-###Screenshot
+kNUI can connect to nlab server via UDP and control it.
+Also you can view and edit nlab's `.nnt` networks.
+
+Works on Windows, Linux, OS X, basically anywhere where you can install
+[kivy](https://kivy.org/#download), but kNUI is designed to use on desktop platforms.
+
+- Copyright (c) 2016 Leonid Shekhtman, Kirill Dudkin
+- License: MIT License
+
+## Requirements
+
+* python 3.x (tested on 3.5)
+* [kivy](https://kivy.org/#download) (>=1.9.1)
+* [tinyrpc](https://github.com/mbr/tinyrpc) (>=0.6) (0.6.dev0 is ok)
+
+## Installation
+
+Install all requirements, download this repository, unpack it and simply launch  `main.py` file:
+```bash
+python kNUI/main.py
+```
+
+## Usage
+
+1. Connecting to a server
+   * Specify ip and port of launched nlab server. (default nlab port is `13550`)
+   * Press `Connect` button.
+2. Launching nets training
+   * Specify training parameters, such as:
+       * rounds,
+       * population size,
+       * directory for saving networks on server (`./nets/*directory*`).
+   * Press `Start` button.
+3. Controlling server:
+   * `Pause`, `Resume`, `Stop` buttons.
+   * Get networks from server.
+   * Inspection mode. When inspection mode is on, server changes its speed to 60 p/s.
+     It may be a little laggy, but we're working on it!
+4. Editing networks
+   * Open a network from `.nnt` file.
+   * Edit it (you can add or edit neurons, links)
+   * Save network to `.nnt` file.
+
+## Screenshot
 
 ![screenshot](./screenshot.png)
+
+## Authors
+
+- [Leonid Shekhtman](https://github.com/leonljsh) (leon.ljsh@gmail.com)
+- [Kirill Dudkin](https://github.com/apostol3) (apostol3.mv@yandex.ru)
