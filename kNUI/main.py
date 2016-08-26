@@ -40,6 +40,7 @@ sys.argv[0] = old_work_dir
 
 Config.set('input', 'mouse', Config.get('input', 'mouse') + ',disable_multitouch')
 nets = []
+app = None
 
 
 class ServerState(Enum):
@@ -81,6 +82,7 @@ class NetDrawer(Widget):
         self.neuro_net = None
         self.link_with_neuron = None
         self.unlink_with_neuron = None
+        self.readonly = False
 
     def select_neuron(self, x, y):
         if self.neuro_net is None:
@@ -144,6 +146,8 @@ class NetDrawer(Widget):
         self.on_button_left_down(touch)
 
     def on_touch_down(self, touch):
+        if self.readonly:
+            return
         if not (self.pos[0] < touch.pos[0] < self.pos[0] + self.size[0] and
                             self.pos[1] < touch.pos[1] < self.pos[1] + self.size[1]):
             return
@@ -154,7 +158,10 @@ class NetDrawer(Widget):
             self.on_button_right_down(touch)
 
     def on_touch_up(self, touch):
+        global app
         if self.faulted_click:
+            return
+        if self.readonly:
             return
         if touch.button == 'left':
             self.on_button_left_up(touch)
@@ -165,6 +172,8 @@ class NetDrawer(Widget):
 
     def on_touch_move(self, touch):
         if self.faulted_click:
+            return
+        if self.readonly:
             return
         if touch.button == 'left':
             self.on_button_left_move(touch)
@@ -663,10 +672,13 @@ class MainWindow(App):
             state_info = doc["state"]
             if state_info == 'running':
                 self.state = ServerState.running
+                self.drawbox.readonly = True
             elif state_info == 'paused':
                 self.state = ServerState.paused
+                self.drawbox.readonly = False
             elif state_info == 'stopped':
                 self.state = ServerState.stopped
+                self.drawbox.readonly = False
 
         self.root.ids.inp_rounds.text = str(doc['max_round'])
         self.root.ids.inp_pop.text = str(doc['popsize'])
