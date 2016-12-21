@@ -41,6 +41,7 @@ just launch it:
 
 1. Connecting to a server
    * Specify ip and port of launched nlab server. (default nlab port is `13550`)
+   * Select transfer protocol (UDP or TCP)
    * Press `Connect` button.
 2. Launching nets training
    * Specify training parameters, such as:

@@ -44,6 +44,31 @@ FloatLayout:
                 height: 30
                 multiline: False
 
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: '30dp'
+
+                Label:
+                    text: 'TCP'
+
+                CheckBox:
+                    group: 'protocol_selector'
+                    id: tcp_selector
+                    state: 'down'
+                    disabled: app.state != app.state.disconnected
+                    allow_no_selection: False
+
+                Label:
+                    text: 'UDP'
+
+                CheckBox:
+                    group: 'protocol_selector'
+                    id: udp_selector
+                    state: 'normal'
+                    disabled: app.state != app.state.disconnected
+                    allow_no_selection: False
+
             Button:
                 text: 'Connect' if app.state == app.state.disconnected else 'Disconnect'
                 size_hint_y: None

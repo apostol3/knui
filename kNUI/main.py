@@ -24,6 +24,7 @@ from tinyrpc.protocols.jsonrpc import JSONRPCProtocol
 
 from .classes import *
 from .udp_stream import UdpStream
+from .tcp_stream import TcpStream
 
 __author__ = "leon.ljsh"
 
@@ -493,15 +494,17 @@ class MainWindow(App):
             Clock.unschedule(self.auto_get_state)
 
             self.state = ServerState.disconnected
-            self.stream.disconnect()
             self.stream = None
             self.rpc = None
 
         else:
             self.initialize_plots()
 
-            self.stream = UdpStream(app.root.ids.inp_ip.text, int(app.root.ids.inp_host.text), 1000)
-            self.stream.connect()
+            if self.root.ids.udp_selector.state == 'down':
+                self.stream = UdpStream(app.root.ids.inp_ip.text, int(app.root.ids.inp_host.text), 1000)
+            else:
+                self.stream = TcpStream(app.root.ids.inp_ip.text, int(app.root.ids.inp_host.text), 1000)
+
             self.rpc = JSONRPCProtocol()
             self.state = ServerState.stopped
             self.server_get_state()
@@ -576,6 +579,7 @@ class MainWindow(App):
         self.server_get_state()
 
     def send_request(self, request):
+        self.stream.connect()
         req = request.serialize()
         print("send request: {}, args: {}".format(request.method, request.kwargs))
         self.stream.send(bytes(req + "\0", encoding='utf8'))
@@ -585,6 +589,7 @@ class MainWindow(App):
             print("get error: " + rep.error)
         else:
             print("get response: {0}".format(rep.result if len(raw_rep) < 255 else "<too long to print>"))
+        self.stream.disconnect()
         return rep
 
     def server_command(self):
