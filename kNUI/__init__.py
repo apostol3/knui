@@ -1,1 +1,1 @@
-from .main import run
+from kNUI.main import run

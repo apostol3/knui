@@ -83,6 +83,7 @@ class NetDrawer(Widget):
         self.link_with_neuron = None
         self.unlink_with_neuron = None
         self.readonly = False
+        self.app = None
 
     def select_neuron(self, x, y):
         if self.neuro_net is None:
@@ -138,9 +139,9 @@ class NetDrawer(Widget):
         if self.neuro_net is None:
             return
         if self.neuron:
-            app.root.ids.context_on_neuron.show(*touch.pos)
+            self.app.root.ids.context_on_neuron.show(*touch.pos)
         else:
-            app.root.ids.context_on_drawbox.show(*touch.pos)
+            self.app.root.ids.context_on_drawbox.show(*touch.pos)
 
     def on_button_right_down(self, touch):
         self.on_button_left_down(touch)
@@ -158,7 +159,6 @@ class NetDrawer(Widget):
             self.on_button_right_down(touch)
 
     def on_touch_up(self, touch):
-        global app
         if self.faulted_click:
             return
         if self.readonly:
@@ -302,12 +302,12 @@ class NetDrawer(Widget):
         if self.neuron is None:
             return
         self.neuron.type = NeuronType(type_)
-        app.root.ids.context_on_neuron.hide()
+        self.app.root.ids.context_on_neuron.hide()
         self.draw()
 
     def delete_neuron(self):
         self.neuro_net.delete_neuron(self.neuron.id)
-        app.root.ids.context_on_neuron.hide()
+        self.app.root.ids.context_on_neuron.hide()
         self.draw()
 
     def unlink_all(self):
@@ -321,31 +321,29 @@ class NetDrawer(Widget):
             links.append(link)
         for link in links:
             self.neuro_net.delete_link(link)
-        app.root.ids.context_on_neuron.hide()
+        self.app.root.ids.context_on_neuron.hide()
         self.draw()
 
     def add_neuron(self):
         self.neuro_net.add_neuron(self.x0_pos - self.camx, self.y0_pos - self.camy)
-        app.root.ids.context_on_drawbox.hide()
+        self.app.root.ids.context_on_drawbox.hide()
         self.draw()
 
     def on_link_with(self):
         self.link_with_neuron = self.neuron.id
-        app.root.ids.context_on_neuron.hide()
+        self.app.root.ids.context_on_neuron.hide()
 
     def on_unlink_with(self):
         self.unlink_with_neuron = self.neuron.id
-        app.root.ids.context_on_neuron.hide()
+        self.app.root.ids.context_on_neuron.hide()
 
 
-def auto_pos(neuro_net):
+def auto_pos(neuro_net, max_x, max_y):
     if neuro_net is None:
         raise TypeError()
 
     dt = 0.1
     r = 20
-    maxx = app.drawbox.size[0]
-    maxy = app.drawbox.size[1]
 
     for nr in neuro_net.neurons:
         vr = neuro_net.get_neuron_vis(nr.id)
@@ -380,8 +378,8 @@ def auto_pos(neuro_net):
                 force = (force[0] + dif[0] * (1 - r * 10 / dif_d), force[1] + dif[1] * (1 - r * 10 / dif_d))
 
         vr.x, vr.y = (vr.x + force[0] * dt, vr.y + force[1] * dt)
-        vr.x = max(min(vr.x, maxx - vr.r), vr.r)
-        vr.y = max(min(vr.y, maxy - vr.r), vr.r)
+        vr.x = max(min(vr.x, max_x - vr.r), vr.r)
+        vr.y = max(min(vr.y, max_y - vr.r), vr.r)
 
 
 def load_net_from_dict(doc):
@@ -398,12 +396,10 @@ def load_net_from_dict(doc):
 
 
 def open_file(path):
-    global app
     f = open(path, 'r')
     doc = json.load(f)
     f.close()
     nets.append(load_net_from_dict(doc))
-    app.update_list()
 
 
 def save_file(path, net):
@@ -447,6 +443,7 @@ class MainWindow(App):
         self.rpc = None
         self.speed_plot = None
         self.fitness_plot = None
+        self.root = None
 
     def build(self):
         self.neuron_names = neuron_names
@@ -463,13 +460,14 @@ class MainWindow(App):
         self.list_adapter.bind(on_selection_change=self.update_select)
         self.root = Builder.load_file(os.path.join(_path, 'main_window.kv'))
         self.drawbox = self.root.ids.drawbox
+        self.drawbox.app = self
 
         # open_file("to.nnt")
         return self.root
 
     def update_list(self):
         old_sel = self.list_adapter.selection
-        app.list_adapter.data = nets
+        self.list_adapter.data = nets
         if len(old_sel) and old_sel[0].index < len(nets):
             self.list_adapter.select_item_view(self.list_adapter.get_view(old_sel[0].index))
             self.update_select()
@@ -710,7 +708,7 @@ class MainWindow(App):
     def on_auto_pos(self, *_):
         if self.drawbox.neuro_net is None:
             return
-        auto_pos(self.drawbox.neuro_net)
+        auto_pos(self.drawbox.neuro_net, self.drawbox.size[0], self.drawbox.size[1])
 
         self.drawbox.draw()
 
@@ -810,6 +808,7 @@ class MainWindow(App):
         def final_open(*_):
             p.dismiss()
             open_file(os.path.join(f.path, file_input.text))
+            app.update_list()
 
         def change_path(*_):
             cur_path.text = os.path.abspath(f.path) + os.path.sep
@@ -847,7 +846,6 @@ def run():
     global app
     app = MainWindow(title='kNUI - kivy-based nlab UI')
     return app.run()
-
 
 if __name__ == "__main__":
     run()

@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='kNUI',
-    version='1.0.0',
+    version='1.0.1',
     packages=find_packages(),
     install_requires=['kivy>=1.9', 'tinyrpc>=0.6.dev'],
     license='MIT',

@@ -104,7 +104,7 @@ class Net:
         for link in links:
             if link.input == id_from and link.output == id_to:
                 return
-        id_ = max(l.id for l in self.links) + 1
+        id_ = max(l.id for l in self.links) + 1 if len(self.links) else 1
         self.links.append(Link(id_, input_=id_from, output=id_to))
         n_from.output.append(id_)
         n_to.input.append(id_)
